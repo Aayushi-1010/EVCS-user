@@ -24,8 +24,8 @@ import showToast from "../components/ToastMessage";
 
 const WIDTH = Dimensions.get("screen").width;
 
-const generateTimeSlots = (startTime, endTime) => {
-  const parseTime = (time) => {
+const parseTime = (time) => {
+  try {
     const [hours, minutes, period] = time.match(/(\d+):(\d+)(am|pm)/).slice(1);
     const hours24 =
       period === "pm" && hours !== "12"
@@ -34,36 +34,45 @@ const generateTimeSlots = (startTime, endTime) => {
     const date = new Date();
     date.setHours(hours24, parseInt(minutes, 10), 0, 0);
     return date;
-  };
-
-  const start = parseTime(startTime);
-  const end = parseTime(endTime);
-
-  const timeSlots = [];
-  let currentTime = new Date(start);
-
-  while (currentTime < end) {
-    const nextTime = new Date(currentTime);
-    nextTime.setMinutes(currentTime.getMinutes() + 30);
-
-    const formatTime = (date) => {
-      let hours = date.getHours();
-      const minutes = date.getMinutes();
-      const period = hours >= 12 ? "pm" : "am";
-      hours = hours % 12 || 12; // Convert to 12-hour format
-      const minutesStr = minutes < 10 ? `0${minutes}` : minutes;
-      return `${hours}:${minutesStr}${period}`;
-    };
-
-    timeSlots.push({
-      startTime: formatTime(currentTime),
-      endTime: formatTime(nextTime),
-    });
-
-    currentTime = nextTime;
+  } catch (error) {
+     console.log('erorr on parseTime Function', error);
   }
 
-  return timeSlots;
+};
+
+const generateTimeSlots = (startTime, endTime) => {
+  try {
+    const start = parseTime(startTime);
+    const end = parseTime(endTime);
+    
+    const timeSlots = [];
+    let currentTime = new Date(start);
+  
+    while (currentTime < end) {
+      const nextTime = new Date(currentTime);
+      nextTime.setMinutes(currentTime.getMinutes() + 30);
+  
+      const formatTime = (date) => {
+        let hours = date.getHours();
+        const minutes = date.getMinutes();
+        const period = hours >= 12 ? "pm" : "am";
+        hours = hours % 12 || 12; // Convert to 12-hour format
+        const minutesStr = minutes < 10 ? `0${minutes}` : minutes;
+        return `${hours}:${minutesStr}${period}`;
+      };
+  
+      timeSlots.push({
+        startTime: formatTime(currentTime),
+        endTime: formatTime(nextTime),
+      });
+  
+      currentTime = nextTime;
+    }
+  
+    return timeSlots;
+  } catch (error) {
+     console.log('error on generateTimeSlots Function', error);
+  }
 };
 
 const SlotBooking = () => {

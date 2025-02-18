@@ -27,7 +27,12 @@
         "googleMaps": {
           "apiKey": "AIzaSyAPxVr83wbDkDHrd9WYDb93J6vQ316_4TA"
         }
-      }
+      },
+      "permissions": [
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
+      ],
+      "package": "com.anonymous.evcs"
     },
     "web": {
       "favicon": "./assets/favicon.png"
