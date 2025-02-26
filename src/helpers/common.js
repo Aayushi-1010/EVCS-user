@@ -5,6 +5,7 @@ export const uuid4 = () => {
       const v = c == 'x' ? r : (r & 0x3) | 0x8;
       return chars[v];
     });
+    // console.log("uuid : ",uuid);
     return uuid;
   };
 

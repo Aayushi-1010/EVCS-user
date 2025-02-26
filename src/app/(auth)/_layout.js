@@ -10,6 +10,7 @@ export default () => {
   const checkUser = async () => {
     const userToken = await retrieveData("token");
     setToken(userToken);
+    // console.log("userToken : ",userToken)
   };
   useEffect(() => {
     checkUser();
