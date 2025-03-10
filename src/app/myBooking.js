@@ -13,6 +13,7 @@ import { firestore } from "../services/config";
 import { retrieveData } from "../services/local";
 import { colors } from "../theme/colors";
 import Button from "../components/Button";
+import showToast from "../components/ToastMessage"; 
 
 const WIDTH = Dimensions.get("screen").width;
 
@@ -148,7 +149,7 @@ const MyBooking = () => {
                   >
                     Scheduled Date :
                   </Text>
-                  {console.log(item.date)}
+                  {/* {console.log("Date: ",item.date)} */}
                   <Text
                     style={{
                       fontWeight: "bold",

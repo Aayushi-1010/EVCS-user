@@ -7,7 +7,10 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
+  Modal
 } from "react-native";
+import { CardField, useStripe } from '@stripe/stripe-react-native';
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { router, useLocalSearchParams } from "expo-router";
 import EvilIcons from "@expo/vector-icons/EvilIcons";
@@ -23,6 +26,7 @@ import { firestore } from "../services/config";
 import showToast from "../components/ToastMessage";
 
 const WIDTH = Dimensions.get("screen").width;
+
 
 const parseTime = (time) => {
   try {
@@ -83,6 +87,78 @@ const SlotBooking = () => {
   const [selectedPlug, setSelectPlug] = useState();
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
   const [isBookingLoading, setIsBookingLoading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentSuccessful, setPaymentSuccessful] = useState(false);
+  const [cardDetails, setCardDetails] = useState(null);
+  const [paymentIntentId, setpaymentIntentId] = useState(null);
+  const { confirmPayment } = useStripe();
+
+  async function fetchPaymentIntent() {
+    try {
+      const response = await fetch('https://181a-114-29-229-79.ngrok-free.app/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentMethodType: 'Card',
+          amount: stationDetails.price,            
+          currency: 'usd',     
+        })
+      });
+      console.log("Price : ",stationDetails.price);
+
+      console.log("response",response)
+      const { clientSecret } = await response.json();
+      console.log(clientSecret);
+      
+      return clientSecret;
+    } catch (error) {
+      console.error('Error fetching payment intent:', error); 
+      return null;
+    }
+  }
+  const handlePayNow = async () => {
+    if (!cardDetails?.complete) {
+          Alert.alert('Error', 'Please enter complete card details');
+          return;
+        }
+        console.log("cardDetails",cardDetails)
+        // Fetch client secret from your backend
+        const clientSecret = await fetchPaymentIntent();
+        // console.log("clientSecret",clientSecret);
+        
+        if (clientSecret) {
+          // const paymentMethod = {
+          //   card: {
+          //     number: '4242424242424242',
+          //     exp_month: '12',
+          //     exp_year: '25',
+          //     cvc: '123',
+          //   },
+          //   billing_details: {
+          //     email: 'test@example.com',
+          //   },
+          // };
+        console.log('clientSecret',clientSecret);
+        
+          const {error , paymentIntent} = await confirmPayment(clientSecret, {
+            paymentMethodType: 'Card',
+            // payment_method: paymentMethod, // Pass the payment method here
+          });
+          console.log("paymentIntent.id",paymentIntent.id);
+
+          if (error) {
+            Alert.alert('Payment failed', error.message);
+          } else if (paymentIntent) {
+            const payment_id = paymentIntent.id
+            // Alert.alert('Payment successful', `Status: ${paymentIntent.status}`);
+            setpaymentIntentId(paymentIntent.id);
+            setPaymentSuccessful(true);
+            setShowPaymentModal(false);
+            await handleSubmitBooking(payment_id);
+            // onPaymentSuccess();  
+          }
+        }
+  }
 
   const timeSlots = generateTimeSlots(
     stationDetails.openTime,
@@ -134,10 +210,11 @@ const SlotBooking = () => {
     });
   };
 
-  const handleSubmitBooking = async () => {
+  const handleSubmitBooking = async (paymentIntentId) => {
     try {
       setPaymentModalOpen(true);
       setIsBookingLoading(true);
+      console.log('paymentIntentId',paymentIntentId);
 
       const userStringify = await retrieveData("user");
 
@@ -160,6 +237,16 @@ const SlotBooking = () => {
         plug: selectedPlug,
         createdAt: new Date(),
         status: "booked",
+        payment: "suceeded",
+        paymentIntentId: paymentIntentId,
+        cardDetails:{
+          brand: cardDetails.brand,
+          complete: cardDetails.complete,
+          expiryMonth: cardDetails.expiryMonth,
+          expiryYear: cardDetails.expiryYear,
+          last4: cardDetails.last4,
+          validCVC: cardDetails.validCVC,
+        }
       });
 
       await submitBookingIntoStationCollection({
@@ -321,14 +408,86 @@ const SlotBooking = () => {
         </View>
       </DefaultView>
       <View style={styles.submitButtonContainer}>
+      <Button
+        title="Book Slot"
+        style={{ marginVertical: 10 }} 
+        disabled={!selectedTime || !selectedPlug || !selectDate}
+        onPress={()=>setShowPaymentModal(true)}
+      />
+      </View>
+
+      {/* {console.log(showPaymentModal)} */}
+        {showPaymentModal && 
+        <><View style={{backgroundColor:colors.gray,marginBottom:10}}>
+        <Text style={{fontSize:20, color:colors.black,textAlign:"center",margin:10}}>Payment Information</Text> 
+        </View>
+        {/* <Modal visible={true} animationType="fade" transparent={true} >//onCloseModal={setShowPaymentModal(false)} */}
+        
+         <View style={{
+          backgroundColor: colors.light, 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          borderRadius: 20, 
+          overflow: 'hidden', 
+          padding: 10,
+          }}>
+          <View style={{
+          backgroundColor: '#ffffff', 
+          borderRadius: 30, 
+          borderWidth: 5,
+          borderColor: colors.darkerGray,
+          padding: 30, 
+          width: '95%', 
+          alignItems: 'center', 
+          }}>
+              
+          <CardField
+            postalCodeEnabled={false}
+            placeholders={{ number: '4242 4242 4242 4242' }}
+            style={styles.cardField}
+            onCardChange={(details) => setCardDetails(details)}
+          />
+          <TouchableOpacity
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 8,
+                    backgroundColor: colors.primary,
+                  }}
+                  onPress={()=>{
+                    handlePayNow();
+                    // setShowPaymentModal(false);
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 18 }}>Pay and Book</Text>
+                </TouchableOpacity>
+          </View> 
+          </View>
+          {/* </Modal> */}
+          </>
+        }
+      {/* <View style={styles.submitButtonContainer}>
         <Button
+          title="Payment"
+          style={{ marginVertical: 10 }}
+          disabled={!selectedTime || !selectedPlug || !selectDate}
+          onPress={()=>setShowPaymentScreen(true)}
+        />
+        {showPaymentScreen && (
+        <Payment 
+          onPaymentSuccess={handlePaymentSuccess}
+        />)}
+        {paymentSuccessful && (
+          <Button
           title="Book Slot"
           style={{ marginVertical: 10 }}
           disabled={!selectedTime || !selectedPlug || !selectDate}
           onPress={handleSubmitBooking}
         />
-      </View>
-    </Fragment>
+        )}
+        </View> */}
+        </Fragment>
   );
 };
 
@@ -408,6 +567,21 @@ const styles = StyleSheet.create({
     borderColor: colors.primary + 30,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+  },
+  modalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  cardField: {
+    width: '95%',
+    height: 50,
+    marginVertical: 20,
+    overflow: 'hidden',
+    borderColor: colors.darkerGray,
+    borderWidth: 3,
   },
 });
 

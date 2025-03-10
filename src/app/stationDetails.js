@@ -54,6 +54,10 @@ const StationDetail = () => {
         </View>
       </View>
       <View style={styles.stationViewContainer}>
+      <Text style={styles.commonTitle}>Price :</Text>
+      <Text>{stationDetails.price}</Text>
+      </View>
+      <View style={styles.stationViewContainer}>
         <Text style={styles.commonTitle}>Location Details :</Text>
         <View style={{ flexDirection: "row", gap: 5, flexWrap: "wrap" }}>
           <Text style={styles.labelText}>Address:</Text>

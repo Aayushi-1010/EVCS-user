@@ -102,7 +102,7 @@ const Home = () => {
         if (mapIndex !== index) {
           mapIndex = index;
           const { coordinate } = state.markers[index];
-          console.log("coordinate", coordinate);
+          // console.log("coordinate", coordinate);
           _map.current.animateToRegion(
             {
               ...coordinate,
