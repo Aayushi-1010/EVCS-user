@@ -54,7 +54,7 @@ const generateTimeSlots = (startTime, endTime) => {
   
     while (currentTime < end) {
       const nextTime = new Date(currentTime);
-      nextTime.setMinutes(currentTime.getMinutes() + 30);
+      nextTime.setMinutes(currentTime.getMinutes() + 60);
   
       const formatTime = (date) => {
         let hours = date.getHours();
@@ -95,7 +95,7 @@ const SlotBooking = () => {
 
   async function fetchPaymentIntent() {
     try {
-      const response = await fetch('https://181a-114-29-229-79.ngrok-free.app/create-payment-intent', {
+      const response = await fetch('https://stripe-server-tau.vercel.app/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -446,7 +446,10 @@ const SlotBooking = () => {
             postalCodeEnabled={false}
             placeholders={{ number: '4242 4242 4242 4242' }}
             style={styles.cardField}
-            onCardChange={(details) => setCardDetails(details)}
+            onCardChange={(details) => {setCardDetails(details);
+              // console.log("Card: ",details);
+            }
+            }
           />
           <TouchableOpacity
                   style={{
